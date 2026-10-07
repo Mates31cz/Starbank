@@ -34,8 +34,7 @@ namespace StarBank
     }
 
     /// <summary>
-    /// Loads and saves MapCacheEntries to a file.  The file is kept next to StarBank.exe if that folder is writable,
-    /// otherwise in %LOCALAPPDATA%\StarBank
+    /// Loads and saves MapCacheEntries to a file in StarBank's data folder (see StarBankDataFolder)
     /// </summary>
     public class MapCacheStore
     {
@@ -45,11 +44,7 @@ namespace StarBank
         //Increase this whenever the way map info is computed changes, so old cache files get thrown away
         private const int FORMAT_VERSION = 1;
 
-        private readonly string[] _cacheFilePaths =
-        {
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, CACHE_FILE_NAME),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "StarBank", CACHE_FILE_NAME)
-        };
+        private readonly string _cacheFilePath = Path.Combine(StarBankDataFolder.Location, CACHE_FILE_NAME);
 
         /// <summary>
         /// Returns the stored entries, keyed by map path.  Returns an empty dictionary if there is no
@@ -57,18 +52,15 @@ namespace StarBank
         /// </summary>
         public Dictionary<string, MapCacheEntry> Load()
         {
-            foreach(string cacheFilePath in _cacheFilePaths)
+            if(File.Exists(_cacheFilePath))
             {
-                if(!File.Exists(cacheFilePath))
-                    continue;
-
                 try
                 {
-                    return ReadCacheFile(cacheFilePath);
+                    return ReadCacheFile(_cacheFilePath);
                 }
                 catch(Exception)
                 {
-                    //Corrupt or outdated cache file; try the next location
+                    //Corrupt or outdated cache file; all maps will be loaded again
                 }
             }
             return new Dictionary<string, MapCacheEntry>(StringComparer.OrdinalIgnoreCase);
@@ -79,17 +71,13 @@ namespace StarBank
         /// </summary>
         public void Save(ICollection<MapCacheEntry> entries)
         {
-            foreach(string cacheFilePath in _cacheFilePaths)
+            try
             {
-                try
-                {
-                    WriteCacheFile(cacheFilePath, entries);
-                    return;
-                }
-                catch(Exception)
-                {
-                    //Folder not writable; try the next location
-                }
+                WriteCacheFile(_cacheFilePath, entries);
+            }
+            catch(Exception)
+            {
+                //The maps will simply be loaded again next time
             }
         }
 
