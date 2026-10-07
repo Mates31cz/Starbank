@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WiX Toolset 5 installer for StarBank.  Build with:
+    wix extension add WixToolset.UI.wixext/5.0.2
+    wix build "StarBank Setup\StarBank.wxs" -arch x86 -ext WixToolset.UI.wixext -o StarBank.Setup.msi
+  (after building StarBank.csproj in Release)
+
+  Uses the same UpgradeCode as the original Advanced Installer project (StarBank Setup.aip),
+  so installing this replaces an installed StarBank 1.9.
+-->
+<?ifndef BinDir?>
+<?define BinDir = $(sys.SOURCEFILEDIR)..\StarBank\bin\Release?>
+<?endif?>
+<?ifndef ObjectListViewDir?>
+<?define ObjectListViewDir = $(sys.SOURCEFILEDIR)..\ObjectListView\bin\Release?>
+<?endif?>
+<?define Version = 1.9.1?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="StarBank"
+           Manufacturer="Mates31cz"
+           Version="$(var.Version)"
+           UpgradeCode="{6F09B382-8D0F-43DF-8FF4-9844AF260629}"
+           Scope="perMachine"
+           Language="1033">
+    <SummaryInformation Description="StarBank $(var.Version) - Starcraft II bank file editor (fixed version)" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="StarBankIcon" SourceFile="$(sys.SOURCEFILEDIR)..\StarBank\Resources\StarBank.ico" />
+    <Property Id="ARPPRODUCTICON" Value="StarBankIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/Mates31cz/Starbank" />
+    <Property Id="ARPCOMMENTS" Value="Fixed version of StarBank by BlueRaja (https://github.com/BlueRaja/Starbank)" />
+
+    <!-- StarBank targets the .NET Framework 4 -->
+    <Property Id="NETFRAMEWORK4">
+      <RegistrySearch Id="NetFramework4Search" Root="HKLM" Key="SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" Name="Install" Type="raw" />
+    </Property>
+    <Launch Condition="Installed OR NETFRAMEWORK4" Message="StarBank requires the .NET Framework 4 or newer." />
+
+    <!-- Install into the folder of a previous installation: this installer's own, or the original StarBank 1.9 -->
+    <Property Id="PREVIOUSINSTALLFOLDER">
+      <RegistrySearch Id="PreviousInstallFolderSearch" Root="HKLM" Key="SOFTWARE\StarBank" Name="InstallFolder" Type="raw" Bitness="always32" />
+    </Property>
+    <Property Id="ORIGINALINSTALLFOLDER">
+      <RegistrySearch Id="OriginalInstallFolderSearch" Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{FDE38B99-3FAA-4273-BE9C-E6E1CC27EE8E}" Name="InstallLocation" Type="raw" Bitness="always32" />
+    </Property>
+    <SetProperty Id="INSTALLFOLDER" Action="SetInstallFolderFromPrevious" Value="[PREVIOUSINSTALLFOLDER]"
+                 Condition="PREVIOUSINSTALLFOLDER" Before="CostFinalize" Sequence="both" />
+    <SetProperty Id="INSTALLFOLDER" Action="SetInstallFolderFromOriginal" Value="[ORIGINALINSTALLFOLDER]"
+                 Condition="ORIGINALINSTALLFOLDER AND NOT PREVIOUSINSTALLFOLDER" Before="CostFinalize" Sequence="both" />
+
+    <StandardDirectory Id="ProgramFilesFolder">
+      <Directory Id="INSTALLFOLDER" Name="StarBank" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ShortcutFolder" Name="StarBank" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="ProgramFiles" Directory="INSTALLFOLDER">
+      <Component>
+        <File Source="$(var.BinDir)\StarBank.exe" KeyPath="yes" />
+      </Component>
+      <Component>
+        <File Source="$(var.BinDir)\StarBank.exe.config" KeyPath="yes" />
+      </Component>
+      <Component>
+        <File Source="$(var.ObjectListViewDir)\ObjectListView.dll" KeyPath="yes" />
+      </Component>
+      <Component>
+        <File Source="$(var.BinDir)\StormLib.dll" KeyPath="yes" />
+      </Component>
+      <Component Id="InstallFolderRegistry">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\StarBank" Name="InstallFolder" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Component Id="StartMenuShortcut" Directory="ShortcutFolder">
+      <Shortcut Id="StarBankShortcut" Name="StarBank" Description="Starcraft II bank file editor"
+                Target="[INSTALLFOLDER]StarBank.exe" WorkingDirectory="INSTALLFOLDER" Icon="StarBankIcon" />
+      <RemoveFolder Id="RemoveShortcutFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\StarBank" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="ProgramFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+    <!-- Welcome -> choose folder -> install (no license page) -->
+    <UI>
+      <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Order="2" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2" />
+    </UI>
+  </Package>
+</Wix>

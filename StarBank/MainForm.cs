@@ -35,8 +35,7 @@ namespace StarBank
             splitContainer1.Visible = false;
             _bankInfoLoader = new BankInfoLoader();
             _mapInfoCache = new MapInfoCache(_bankInfoLoader);
-            _bankBackupManager = new BankBackupManager(_bankInfoLoader.BanksFolder,
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups"));
+            _bankBackupManager = new BankBackupManager(_bankInfoLoader.BanksFolder, Path.Combine(StarBankDataFolder.Location, "Backups"));
             bankEditor1.BankSaving += bankEditor1_BankSaving;
             bankEditor1.BankSaved += bank => RefreshBackupStatus();
 

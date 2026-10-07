@@ -94,6 +94,7 @@
       <DependentUpon>NewSectionItemForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MapCacheStore.cs" />
+    <Compile Include="StarBankDataFolder.cs" />
     <Compile Include="MapInfoCache.cs" />
     <Compile Include="ExplorerHelper.cs" />
     <Compile Include="MainForm.cs">
