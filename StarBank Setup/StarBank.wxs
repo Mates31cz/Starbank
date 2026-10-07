@@ -24,7 +24,9 @@
            Language="1033">
     <SummaryInformation Description="StarBank $(var.Version) - Starcraft II bank file editor (fixed version)" />
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <!-- Remove the old version before costing, so its files are always replaced (even if a file there has a higher version) -->
+    <MajorUpgrade Schedule="afterInstallInitialize" AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <Icon Id="StarBankIcon" SourceFile="$(sys.SOURCEFILEDIR)..\StarBank\Resources\StarBank.ico" />
